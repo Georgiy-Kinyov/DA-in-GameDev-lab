@@ -1,5 +1,5 @@
 # АНАЛИЗ ДАННЫХ И ИСКУССТВЕННЫЙ ИНТЕЛЛЕКТ [in GameDev]
-Отчет по лабораторной работе #3 выполнил:
+Отчет по лабораторной работе #4 выполнил:
 - Кинев Георгий Ильич
 - РИ211120
 
@@ -9,7 +9,7 @@
 | ------ | ------ | ------ |
 | Задание 1 | * | 60 |
 | Задание 2 | * | 20 |
-| Задание 3 | # | 20 |
+| Задание 3 | * | 20 |
 
 знак "*" - задание выполнено; знак "#" - задание не выполнено;
 
@@ -24,80 +24,135 @@
 
 
 ## Цель работы
-Познакомиться с программными средствами для создания системы машинного обучения и её интеграции в Unity.
+Изучить алгоритм работы перцептрона и организовать его обучение и работу в Unity.
 
 ## Задание 1
-### Реализовать систему машинного обучения в связке Python-Unity.
+### В проекте Unity реализовать перцептрон, к-рый может проводить вычисления OR, AND, NAND, XOR; дать комментарий о корректности работы.
 
 Ход работы:
-1) Создать проект в Unity и построить в нём следующую сцену:
+1) Создать проект в Unity и пустой объект в нём;
 
-![Подготовка](https://user-images.githubusercontent.com/114848093/200549814-8d7ff405-3a4f-4d81-95ab-7c0fb4ea7353.png)
+2) Создать скрипт "Perceptron" и вставить в него следующий код:
 
-2) Добавить в проект библиотеки для организации машинного обучения:
+```
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
 
-![Пакеты](https://user-images.githubusercontent.com/114848093/200551059-ea0e730d-39c7-4677-9a83-cb95c0ac4eb4.png)
+[System.Serializable]
+public class TrainingSet
+{
+	public double[] input;
+	public double output;
+}
 
-3) Добавить в проект скрипт C#, содержащий инструкции по обучению ML-агента:
+public class Perceptron : MonoBehaviour {
 
-![Код](https://user-images.githubusercontent.com/114848093/200550116-83789fd9-8c2a-45b8-8a65-de5116a2a097.png)
+	public TrainingSet[] ts;
+	double[] weights = {0,0};
+	double bias = 0;
+	double totalError = 0;
 
-4) Подключить необходимые компоненты к сфере "RollerAgent":
+	double DotProductBias(double[] v1, double[] v2) 
+	{
+		if (v1 == null || v2 == null)
+			return -1;
+	 
+		if (v1.Length != v2.Length)
+			return -1;
+	 
+		double d = 0;
+		for (int x = 0; x < v1.Length; x++)
+		{
+			d += v1[x] * v2[x];
+		}
 
-![Настройка](https://user-images.githubusercontent.com/114848093/200551886-d15c5c92-3e72-4827-88d9-9964fdf27d61.png)
+		d += bias;
+	 
+		return d;
+	}
 
-5) Добавить в корень проекта файл .yaml с конфигурацией нейронной сети.
-6) Создать виртуальную среду в Anaconda и добавить в неё библиотеки для машинного обучения.
-7) Произвести запуск обучения.
-Результат: произвести обучение не удалось, поскольку Anaconda и Unity не могут установить соединение.
-8) Вставить в проект готовый файл с результатами обучения и подключить его к сфере:
+	double CalcOutput(int i)
+	{
+		double dp = DotProductBias(weights,ts[i].input);
+		if(dp > 0) return(1);
+		return (0);
+	}
 
-![Модель](https://user-images.githubusercontent.com/114848093/200554228-f76b6b26-a683-4f53-be76-e5d9f3549a46.png)
+	void InitialiseWeights()
+	{
+		for(int i = 0; i < weights.Length; i++)
+		{
+			weights[i] = Random.Range(-1.0f,1.0f);
+		}
+		bias = Random.Range(-1.0f,1.0f);
+	}
 
-9) Создать 16 копий обстановки:
+	void UpdateWeights(int j)
+	{
+		double error = ts[j].output - CalcOutput(j);
+		for(int i = 0; i < weights.Length; i++)
+		{			
+			weights[i] = weights[i] + error*ts[j].input[i]; 
+		}
+		bias += error;
+	}
 
-![Размножение](https://user-images.githubusercontent.com/114848093/200553610-f0dbbb88-f505-443e-a75d-7e37ba5fffe0.png)
+	public double CalcOutput(double i1, double i2)
+	{
+		double[] inp = new double[] {i1, i2};
+		double dp = DotProductBias(weights,inp);
+		if(dp > 0) return(1);
+		return (0);
+	}
 
-10) Запустить проект и наблюдать за результатами:
+	void Train(int epochs)
+	{
+		InitialiseWeights();
+		
+		for(int e = 0; e < epochs; e++)
+		{
+			totalError = 0;
+			for(int t = 0; t < ts.Length; t++)
+			{
+				UpdateWeights(t);
+				Debug.Log("W1: " + (weights[0]) + " W2: " + (weights[1]) + " B: " + bias);
+			}
+			for(int t=0;t<ts.Length;t++){
+				double error = ts[t].output - CalcOutput(t);
+				totalError += Mathf.Abs((float)error);
+			}
+			Debug.Log("TOTAL ERROR: " + totalError);
+		}
+	}
 
-![Результат](https://user-images.githubusercontent.com/114848093/200554343-5f39d85c-78de-4253-a911-1f66da964a40.png)
+	void Start () {
+		Train(8);
+		Debug.Log("Test 0 0: " + CalcOutput(0,0));
+		Debug.Log("Test 0 1: " + CalcOutput(0,1));
+		Debug.Log("Test 1 0: " + CalcOutput(1,0));
+		Debug.Log("Test 1 1: " + CalcOutput(1,1));		
+	}
+	
+	void Update () {
+		
+	}
+}
+```
+
+NB: Да, этот код отличается от вашего. В вашем коде имеется ошибка, и мои указания на это вы благополучно игнорируете.
+
+
 
 ## Задание 2
-### Подробно описать каждую строку файла конфигурации нейронной сети. Самостоятельно найти информацию о компонентах Decision Requester, Behavior Parameters.
+### Построить графики зависимости ошибки обучения от количества эпох [sic]. Указать, от чего зависит необходимое кол-во эпох обучения.
 
-#### Файл конфигурации нейронной сети:
-- batch_size - кол-во попыток, поступающих одновременно для обучения сети.
-- learning_rate - величина шага против градиента при обучении. При увеличении скорость обучения возрастает, но точность может упасть.
-- learning_rate_schedule - задаёт зависимость скорости обучения (см. выше) от времени.
-- hidden_units - кол-во нейронов в каждом скрытом слое сети.
-- num_layers - кол-во скрытых слоёв.
-- strength - на это число умножаются все значения награды.
-- max_steps - через такое кол-во шагов обучение автоматически прекращается.
-- summary_freq - частота вывода кратких сведений о ходе обучения (каждые _столько_ поколений).
 
-#### Decision Requester:
-Принимает решение на основе имеющихся данных при обучении сети.
-
-Параметры:
-- Decision Period - кол-во шагов академии (вкратце - процедуры, управляющей обучением всех агентов) между соседними запросами.
-- Take Actions Between Decisions - совершает ли агент действие, если на текущем шаге решение не запрашивается.
-
-#### Behavior Parameters
-Параметры агента (НЕ сети).
-
-Собственно параметры:
-- Vector Observation
-  - Space Size - размер вектора, в к-рый записываются наблюдения.
-  - Stacked Vectors - сколько наблюдений делается, прежде чем отправить их в академию (см.)
-- Vector Action
-  - Space Type - тип выходных данных (дискретный/непрерывный)
-  - Space Size - кол-во элементов в выходных данных.
-- Model - файл с результатами обучения, используется для работы сети.
-- Behavior Type - тип поведения (по умолчанию/только обучение/не обучать).
+## Задание 3
+### Построить визуальную модель работы перцептрона на сцене Unity.
 
 ## Выводы
 
-Была построена сцена в Unity и создана среда в Anaconda, но из-за неопределённых проблем при интеграции пришлось использовать готовый файл с результатами обучения нейронной сети. Были проанализированы файлы и компоненты, ответственные за обучение.
 
 | Plugin | README |
 | ------ | ------ |
