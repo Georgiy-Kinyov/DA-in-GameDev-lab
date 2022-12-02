@@ -267,7 +267,7 @@ public class PerceptronTest : MonoBehaviour {
 }
 ```
 
-На выходе получаем необходимые нам данные:
+Запускаем симуляцию, на выходе получаем необходимые нам данные:
 (Скриншот)
 
 Строим на их основе графики:
@@ -280,8 +280,51 @@ public class PerceptronTest : MonoBehaviour {
 
 Ход работы:
 1) Создаём плоскость Floor, куб Target и шар Collider. (Скриншот)
-2) Подключаем к шару и кубу материалы.
-3) Подключаем к кубу скрипт: 
+2) Подключаем к шару и кубу материалы и компоненты Rigid Body. Настраиваем Rigid Body следующим образом: (Скриншоты)
+3) Подключаем к кубу скрипт:
+
+```
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using rnd=UnityEngine.Random;
+
+public class TargetB : MonoBehaviour
+{
+    public Material tm, cm;
+    public Perceptron p;
+    public int xt, xc;
+    void Start()
+    {
+        if(xt==0){
+            tm.color=Color.grey;
+        }
+        else {
+            tm.color=Color.white;
+        }
+        if(xc==0){
+            cm.color=Color.grey;
+        }
+        else {
+            cm.color=Color.white;
+        }
+    }
+
+    void OnCollisionEnter(Collision col) {
+        if(col.gameObject.name=="Collider") {
+            if(p.CalcOutput(xt,xc)==1){
+                tm.color=Color.green;
+            }
+            else{
+                tm.color=Color.red;
+            }
+            Destroy(col.gameObject);
+        }
+    }
+}
+```
+
+4)  
 
 ## Выводы
 
